@@ -12,6 +12,7 @@ import {
   Typography,
   TablePagination,
   TableSortLabel,
+  TextField,
 } from "@mui/material";
 import { JobInterface } from "../../../shared/interfaces";
 import "./BrowseResults.css";
@@ -37,32 +38,28 @@ const BrowseResults: FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [orderBy, setOrderBy] = useState<keyof JobInterface>("title");
   const [order, setOrder] = useState<Order>("asc");
+  const [filters, setFilters] = useState({
+    title: '',
+    company_name: '',
+    candidate_required_location: '',
+    category: '',
+  });
 
   useEffect(() => {
-    // Use the mock data instead of fetching from the API
     const fetchJobs = async () => {
       try {
         setLoading(true);
-        await axios({
+        const response = await axios({
           method: "GET",
           url: `/api/job`,
           baseURL: baseBackendUrl,
-        })
-          .then((response) => {
-            const res = response.data;
-            setJobs(res);
-            setLoading(false);
-          })
-          .catch((error) => {
-            if (error.response) {
-              console.log(error.response);
-              console.log(error.response.status);
-              console.log(error.response.headers);
-            }
-          });
+        });
+        setJobs(response.data);
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching jobs:", error);
         setError("Failed to fetch jobs. Please try again later.");
+        setLoading(false);
       }
     };
 
@@ -86,18 +83,31 @@ const BrowseResults: FC = () => {
     setOrderBy(property);
   };
 
-  const sortedJobs = React.useMemo(() => {
-    const comparator = (a: JobInterface, b: JobInterface) => {
-      if (b[orderBy] < a[orderBy]) {
-        return order === "asc" ? 1 : -1;
-      }
-      if (b[orderBy] > a[orderBy]) {
-        return order === "asc" ? -1 : 1;
-      }
-      return 0;
-    };
-    return [...jobs].sort(comparator);
-  }, [jobs, order, orderBy]);
+  const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [name]: value
+    }));
+  };
+
+  const filteredAndSortedJobs = React.useMemo(() => {
+    return [...jobs]
+      .filter(job => 
+        Object.entries(filters).every(([key, value]) => 
+          job[key as keyof JobInterface]?.toString().toLowerCase().includes(value.toLowerCase())
+        )
+      )
+      .sort((a, b) => {
+        if (b[orderBy] < a[orderBy]) {
+          return order === "asc" ? 1 : -1;
+        }
+        if (b[orderBy] > a[orderBy]) {
+          return order === "asc" ? -1 : 1;
+        }
+        return 0;
+      });
+  }, [jobs, filters, order, orderBy]);
 
   if (loading) {
     return <CircularProgress />;
@@ -109,6 +119,18 @@ const BrowseResults: FC = () => {
 
   return (
     <Paper className="browse-results-container">
+      <div style={{ marginBottom: '20px' }}>
+        {Object.keys(filters).map((key) => (
+          <TextField
+            key={key}
+            name={key}
+            label={key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+            value={filters[key as keyof typeof filters]}
+            onChange={handleFilterChange}
+            style={{ marginRight: '10px' }}
+          />
+        ))}
+      </div>
       <TableContainer style={{ height: "70vh", overflow: "auto" }}>
         <Table stickyHeader>
           <TableHead>
@@ -146,7 +168,7 @@ const BrowseResults: FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedJobs
+            {filteredAndSortedJobs
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((job: JobInterface) => (
                 <TableRow key={job.id}>
@@ -184,7 +206,7 @@ const BrowseResults: FC = () => {
       <TablePagination
         rowsPerPageOptions={[10, 25, 50, 100]}
         component="div"
-        count={jobs.length}
+        count={filteredAndSortedJobs.length}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}
