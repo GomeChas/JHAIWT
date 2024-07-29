@@ -8,3 +8,7 @@
 .input-form-container{
     margin: 25px 50px;
 }
+
+.hide-arrow .MuiSelect-icon {
+    display: none;
+  }
