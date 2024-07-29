@@ -12,9 +12,11 @@ import {
   Select,
   TextField,
   Chip,
+  Autocomplete,
   Box,
   IconButton,
 } from "@mui/material";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useFormik } from "formik";
 import * as yup from "yup";
@@ -68,6 +70,7 @@ const InputForm = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
     onSubmit: async (values) => {
+    onSubmit: async (values) => {
       setSearchValues({
         industryCategory: formik.values.industryCategory,
         yearsOfExperience: formik.values.yearsOfExperience,
@@ -76,6 +79,9 @@ const InputForm = () => {
         academicCredentials: formik.values.academicCredentials,
         numberOfSearchResults: `${formik.values.numberOfSearchResults.toString()}`,
       });
+
+      
+      navigate("/results");
 
       try {
         await axios.post(`${baseBackendUrl}/api/job/results`, values);
@@ -124,6 +130,12 @@ const InputForm = () => {
       });
   };
 
+  useEffect(() => {
+    fetchTags();
+  }, []);
+
+  const handleRelevantSkillsChange = (event: any, value: string[]) => {
+    formik.setFieldValue("relevantSkills", value);
   useEffect(() => {
     fetchTags();
   }, []);
@@ -210,11 +222,43 @@ const InputForm = () => {
         />
         <FormControl
           className="input-form hide-arrow"
+          className="input-form hide-arrow"
           error={
             formik.touched.relevantSkills &&
             Boolean(formik.errors.relevantSkills)
           }
         >
+          <Autocomplete
+            multiple
+            id="tags-outlined"
+            options={skills}
+            getOptionLabel={(option) => option}
+            value={formik.values.relevantSkills}
+            onChange={handleRelevantSkillsChange}
+            filterSelectedOptions
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                label="Relevant Skills"
+                placeholder="Select Skills"
+                name="relevantSkills"
+              />
+            )}
+            renderTags={(value: string[], getTagProps) =>
+              value.map((option: string, index: number) => {
+                const { key, ...tagProps } = getTagProps({ index });
+                return (
+                  <Chip
+                    key={key}
+                    variant="outlined"
+                    label={option}
+                    {...tagProps}
+                  />
+                );
+              })
+            }
+          />
           <InputLabel id="relevantSkillsLabel">Relevant Skills</InputLabel>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Select
