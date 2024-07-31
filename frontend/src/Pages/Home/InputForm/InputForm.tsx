@@ -105,11 +105,6 @@ const InputForm = () => {
       });
   };
 
-  useEffect(() => {
-    fetchData();
-    fetchTags();
-  }, []);
-
   const fetchTags = async () => {
     await axios({
       method: "GET",
@@ -148,6 +143,7 @@ const InputForm = () => {
   };
 
   return (
+    <div className="input-form-container">
     <div className="input-form-container">
       <form onSubmit={formik.handleSubmit}>
         <FormControl className="input-form" id="industryCategoryFormControl">
@@ -324,6 +320,7 @@ const InputForm = () => {
           Search
         </Button>
       </form>
+    </div>
     </div>
   );
 };
