@@ -46,6 +46,10 @@ def get_all_job_postings(db_filename: str) -> list:
     with conn:
         cursor = conn.cursor()
 
+        cursor.execute("SELECT COUNT(*) FROM postings WHERE inactive_date_utc = 'None'")
+        total_entries = cursor.fetchone()[0]
+        print(f"The database contains {total_entries} active job postings.")
+
         print("Executing getAllJobPostings sproc...")
         cursor.execute(
             """

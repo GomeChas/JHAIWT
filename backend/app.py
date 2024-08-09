@@ -22,7 +22,11 @@ def home():
     response = return_clean_json_data(
         "remotive", "https://remotive.com/api/remote-jobs"
     )
+    job_count = len(response)
+    print(f"SUCCESS: Retrieved {job_count} jobs before preprocessing.")
     response = preprocess_text(response)
+    job_count = len(response)
+    print(f"SUCCESS: Retrieved {job_count} jobs after preprocessing.")
     return {"message": response}, 200
 
 
@@ -90,7 +94,7 @@ def get_all_categories():
     return jsonify(response)
 
 
-@cross_origin
+@cross_origin()
 @app.route("/api/recommendation_engine", methods=["POST"])
 def get_recommendation():
     print("POST /api/recommendation_engine")
@@ -118,6 +122,20 @@ def get_recommendation():
     response = sprocs.get_recommended_job_postings(engine_results, "Job.db")
     print("SUCCESS")
     return jsonify(response)
+
+
+@cross_origin()
+@app.route("/db_refresh", methods=["POST"])
+def jobs_ingestion_refresh():
+    print("POST /jobs_ingestion_refresh")
+    try:
+        jobs_ingestion.main()
+        response = {"message": "Job ingestion refreshed successfully."}
+        print("SUCCESS")
+        return jsonify(response), 200
+    except Exception as e:
+        print(f"ERROR: {e}")
+        return make_response(f"Failed to refresh job ingestion: {e}", 500)
 
 
 if __name__ == "__main__":
